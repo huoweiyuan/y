@@ -3,11 +3,10 @@
 
 #include <atomic>
 #include <mutex>
+#include <cassert>
 
 namespace y 
 {
-  class Allocator;
-  extern Allocator *g_allocator;
   class Allocator
   {
   protected:
@@ -22,8 +21,8 @@ namespace y
 
   private:
     static std::mutex s_mutex;
+    static Allocator s_default_allocator, *s_default_allocator_ptr;
     std::atomic_bool m_as_default_allocator;
-    friend void g_allocator_init(Allocator *);
 
   private:
     virtual char *
@@ -125,29 +124,34 @@ namespace y
          static_cast<char*>(ptr) + READ_OBJ_PTR_OFFSET));
    }
 
+   static Allocator* get_default_allocator()
+   {
+     assert(s_default_allocator_ptr);
+     return s_default_allocator_ptr;
+   }
+
    void set_as_default_allocator()
    {
      std::lock_guard<std::mutex> lk(s_mutex);
-     if (g_allocator)
-       g_allocator->m_as_default_allocator = false;
+     if (s_default_allocator_ptr)
+       s_default_allocator_ptr->m_as_default_allocator = false;
      m_as_default_allocator = true;
-     g_allocator = this;
+     s_default_allocator_ptr = this;
    }
 
 };
 
 std::mutex Allocator::s_mutex;
-
-Allocator  g_default_allocator(true);
-y::Allocator *g_allocator = &g_default_allocator;
+Allocator *Allocator::s_default_allocator_ptr = nullptr;
+Allocator Allocator::s_default_allocator(true);
 
 Allocator::~Allocator()
 {
   if (m_as_default_allocator) {
     std::lock_guard<std::mutex> lk(s_mutex);
     m_as_default_allocator = false;
-    g_allocator = &g_default_allocator;
-    g_default_allocator.m_as_default_allocator = true;
+    s_default_allocator_ptr = &s_default_allocator;
+    s_default_allocator.m_as_default_allocator = true;
   }
 }
 
@@ -165,12 +169,12 @@ void* operator new[] (size_t size, y::Allocator *alloc) noexcept
 
 void* operator new(std::size_t size) noexcept
 {
-  return y::g_allocator->alloc(size);
+  return y::Allocator::get_default_allocator()->alloc(size);
 }
  
 void* operator new[](std::size_t size)
 {
-  return y::g_allocator->alloc(size);
+  return y::Allocator::get_default_allocator()->alloc(size);
 }
  
 void operator delete(void* ptr) noexcept
