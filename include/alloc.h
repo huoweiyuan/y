@@ -1,5 +1,5 @@
-#ifndef ALLOC_H
-#define ALLOC_H
+#ifndef Y_ALLOC_H
+#define Y_ALLOC_H
 
 #include <atomic>
 #include <mutex>
@@ -16,7 +16,8 @@ namespace y
     // for new/delete
     static constexpr const short OBJ_NUM_HEAD_SIZE = 8;
     static constexpr const short OBJ_PTR_HEAD_SIZE = 8;
-    static constexpr const short READ_OBJ_NUM_OFFSET = -(OBJ_NUM_HEAD_SIZE) - (OBJ_PTR_HEAD_SIZE);
+    static constexpr const short READ_OBJ_NUM_OFFSET =
+        -(OBJ_NUM_HEAD_SIZE) - (OBJ_PTR_HEAD_SIZE);
     static constexpr const short READ_OBJ_PTR_OFFSET = -(OBJ_PTR_HEAD_SIZE);
 
   private:
@@ -91,7 +92,7 @@ namespace y
    void* realloc(void *ptr, size_t size) {
      if (ptr == nullptr) 
        return nullptr;
-     char *_ptr = realloc_memory(static_cast<char*>(ptr) + READ_OBJ_PTR_OFFSET,
+     char *_ptr = realloc_memory(static_cast<char *>(ptr) + READ_OBJ_PTR_OFFSET,
                                  size + OBJ_PTR_HEAD_SIZE);
      if (_ptr == nullptr)
        return nullptr;
@@ -213,4 +214,4 @@ void operator delete[](void* ptr, std::size_t size) noexcept
   allocator->free(ptr);
 }
 
-#endif// ALLOC_H
+#endif// Y_ALLOC_H
