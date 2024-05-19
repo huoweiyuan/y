@@ -5,12 +5,14 @@
 #include <mutex>
 #include <cassert>
 
+#include "def.h"
+
 namespace y 
 {
   class Allocator
   {
   protected:
-    ushort EXTRA_MEM_SIZE = 0;
+    __ushort EXTRA_MEM_SIZE = 0;
 
   private:
     // for new/delete
@@ -38,6 +40,7 @@ namespace y
    virtual void free_memory(void *ptr)
    {
      ::free(ptr);
+
    }
 
  public:
@@ -168,7 +171,7 @@ void* operator new[] (size_t size, y::Allocator *alloc) noexcept
   return alloc->alloc(size);
 }
 
-void* operator new(std::size_t size) noexcept
+void* operator new(std::size_t size)
 {
   return y::Allocator::get_default_allocator()->alloc(size);
 }
