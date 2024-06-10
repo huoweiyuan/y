@@ -2,11 +2,57 @@
 #define Y_CONSTRUCT_H
 
 #include "allocator.h"
+#include <cstddef>
+#include <limits>
+#include <new>
 #include <utility>
 
 namespace y {
-template <typename _Tp> class ConstructorT;
-template <> class ConstructorT<void> : protected Allocator {
+// template <typename _Tp, typename _Alloc> class ConstructorT : public Allocator<_Alloc> {
+// public:
+//   using value_type = _Tp;
+// 
+// public:
+//   ConstructorT() noexcept = default;
+//   template <typename U> ConstructorT(const ConstructorT<U> &) noexcept {}
+//   ~ConstructorT() = default;
+// 
+// public:
+//   _Tp* allocate(size_t num, const void* hint = 0) {
+//     if (num > std::numeric_limits<size_t>::max() / sizeof(_Tp)) {
+//       throw std::bad_alloc();
+//     }
+//     void *ptr = Allocator<_Tp>::alloc(num * sizeof(_Tp));
+//     if (!ptr) {
+//       throw std::bad_alloc();
+//     }
+//     return ptr;
+//   }
+// 
+//   void deallocate(_Tp* ptr, size_t num) noexcept {
+//     free(ptr);
+//   }
+// 
+//   template <typename U, typename... Args> void construct(U *p, Args &&...args) {
+//     ::new ((void *)p) U(std::forward<Args>(args)...);
+//   }
+//   
+//   template <typename U> void destroy(U *p) { p->~U(); }
+// 
+//   template <typename U> struct rebind {
+//     using other = ConstructorT<U>;
+//   };
+// 
+//   bool operator==(const ConstructorT &other) const noexcept {
+//     return true; // 所有标准分配器都相等
+//   }
+// 
+//   bool operator!=(const ConstructorT &other) const noexcept {
+//     return false; // 所有标准分配器都相等
+//   }
+// };
+
+template <typename _Alloc> class Constructor : public Allocator<_Alloc> {
 private:
   /* |NUM|xxx| */
   static const size_t OBJ_NUM_SIZE = sizeof(size_t);
@@ -19,7 +65,7 @@ public:
   template <typename ClassName, size_t Num, typename... P>
   ClassName *create_obj(P &&...args) {
     const size_t _class_size = sizeof(ClassName);
-    void *_ptr = alloc(_class_size * Num + HEADER_TOTAL_SIZE);
+    void *_ptr = Allocator<_Alloc>::alloc(_class_size * Num + HEADER_TOTAL_SIZE);
     if (_ptr == nullptr)
       return nullptr;
 
@@ -45,34 +91,25 @@ public:
     }
 
     void *_alloced_ptr = _ptr - HEADER_TOTAL_SIZE;
-    free(_alloced_ptr);
+    Allocator<_Alloc>::free(_alloced_ptr);
   }
-
-public:
-  static void *get_allocator_ptr(void *ptr);
 };
 
-// template<typename _Tp> class Constructor : public Allocator {
-// 
-// };
-
-using Constructor = ConstructorT<void>;
-
-template <typename ClassName, size_t Num = 1, typename... P>
-ClassName *g_new(Constructor *constructor, P &&...args) {
+template <typename ClassName, size_t Num = 1, typename _Constructor,
+          typename... P>
+ClassName *g_new(_Constructor *constructor, P &&...args) {
   if (constructor == nullptr)
     return nullptr;
-  ClassName *_ptr =
-      constructor->create_obj<ClassName, Num>(std::forward<P>(args)...);
+  ClassName *_ptr = constructor->template create_obj<ClassName, Num>(
+      std::forward<P>(args)...);
   return _ptr;
 }
 
-template <typename ClassName> void g_delete(ClassName *ptr) {
-  Constructor *constructor = nullptr;
-  if (ptr == nullptr || (constructor = static_cast<Constructor *>(
-                             Constructor::get_allocator_ptr(ptr))) == nullptr)
+template <typename ClassName, typename _Constructor>
+void g_delete(_Constructor *constructor, ClassName *ptr) {
+  if (constructor == nullptr)
     return;
-  constructor->delete_obj(ptr);
+  constructor->template delete_obj(ptr);
 }
 
 } // namespace y

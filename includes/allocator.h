@@ -5,6 +5,7 @@
 
 namespace y {
 
+template<typename T>
 class Allocator {
 private:
   /* |allocator ptr|xxxx| */
@@ -16,40 +17,48 @@ private:
   static const size_t READ_ALLOCATOR_PTR_OFFSET = -(ALLOCATOR_PTR_SIZE);
 
 private:
-  virtual void *alloc_memory(size_t size) = 0;
-  virtual void *realloc_memory(void *ptr, size_t size) = 0;
-  virtual void free_memory(void *ptr) = 0;
+  T* m_derived_ptr;
 
-protected:
-  void *alloc(size_t size);
-  void *realloc(void *ptr, size_t size);
-  void free(void *ptr);
+public:
+  Allocator() : m_derived_ptr(static_cast<T *>(this)) {}
 
-  friend inline void *g_alloc(Allocator *, size_t);
-  friend inline void *g_realloc(void *, size_t);
-  friend inline void g_free(void *);
+public:
+  void *alloc(size_t size) {
+    void *_ptr = m_derived_ptr->alloc_memory(size + HEADER_TOTAL_SIZE);
+    *(static_cast<void **>(_ptr)) = this;
+    return static_cast<char *>(_ptr) + HEADER_TOTAL_SIZE;
+  }
 
-  static void *get_allocator_ptr(void *ptr);
+  void *realloc(void *ptr, size_t size) {
+    void *_realloc_ptr = m_derived_ptr->realloc_memory(
+        static_cast<char *>(ptr) - HEADER_TOTAL_SIZE, size + HEADER_TOTAL_SIZE);
+    return static_cast<char *>(_realloc_ptr) + HEADER_TOTAL_SIZE;
+  }
+
+  void free(void *ptr) {
+    m_derived_ptr->free_memory(static_cast<char *>(ptr) - HEADER_TOTAL_SIZE);
+  }
 };
 
 } // namespace y
 
 namespace y {
-inline void *g_alloc(Allocator *allocator, size_t size) {
+template <typename _Alloc>
+inline void *g_alloc(_Alloc *allocator, size_t size) {
   if (allocator == nullptr)
     return nullptr;
   return allocator->alloc(size);
 }
 
-inline void *g_realloc(void *ptr, size_t size) {
-  Allocator *allocator = nullptr;
+template <typename _Alloc>
+inline void *g_realloc(_Alloc *allocator, void *ptr, size_t size) {
+  if (allocator == nullptr)
+    return nullptr;
   return allocator->realloc(ptr, size);
 }
 
-inline void g_free(void *ptr) {
-  Allocator *allocator = nullptr;
-  if (ptr == nullptr || (allocator = static_cast<Allocator *>(
-                             Allocator::get_allocator_ptr(ptr))) == nullptr)
+template <typename _Alloc> inline void g_free(_Alloc *allocator, void *ptr) {
+  if (allocator == nullptr)
     return;
   allocator->free(ptr);
 }
