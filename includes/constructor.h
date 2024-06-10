@@ -5,7 +5,8 @@
 #include <utility>
 
 namespace y {
-class Constructor : protected Allocator {
+template <typename _Tp> class ConstructorT;
+template <> class ConstructorT<void> : protected Allocator {
 private:
   /* |NUM|xxx| */
   static const size_t OBJ_NUM_SIZE = sizeof(size_t);
@@ -50,6 +51,12 @@ public:
 public:
   static void *get_allocator_ptr(void *ptr);
 };
+
+// template<typename _Tp> class Constructor : public Allocator {
+// 
+// };
+
+using Constructor = ConstructorT<void>;
 
 template <typename ClassName, size_t Num = 1, typename... P>
 ClassName *g_new(Constructor *constructor, P &&...args) {
