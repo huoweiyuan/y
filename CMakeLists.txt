@@ -2,6 +2,6 @@ MESSAGE("Start to process y mode")
 INCLUDE_DIRECTORIES(includes)
 SET(SRCS 
 ${CMAKE_CURRENT_SOURCE_DIR}/srcs/log.cc
-${CMAKE_CURRENT_SOURCE_DIR}/srcs/alloc.cc
+${CMAKE_CURRENT_SOURCE_DIR}/srcs/memory.cc
 )
 ADD_LIBRARY(y STATIC ${SRCS})
