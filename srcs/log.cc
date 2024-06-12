@@ -1,4 +1,6 @@
 #include "log.h"
+#include <vector>
+
 using namespace y::lib;
 using namespace std;
 Log::log_level Log::static_log_level = log_level::DEBUG;

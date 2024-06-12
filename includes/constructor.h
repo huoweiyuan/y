@@ -61,6 +61,10 @@ private:
   static const size_t WRITE_OBJ_NUM_OFFSET = 0;
   static const size_t READ_OBJ_NUM_OFFSET = -OBJ_NUM_SIZE;
 
+private:
+  Constructor() = default;
+  friend _Alloc;
+
 public:
   template <typename ClassName, size_t Num, typename... P>
   ClassName *create_obj(P &&...args) {

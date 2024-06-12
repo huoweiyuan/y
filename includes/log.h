@@ -2,7 +2,7 @@
 #define Y_LOG_H
 
 #include <unistd.h>
-#include <vector>
+#include <string>
 
 namespace y {
 namespace lib {
@@ -23,9 +23,16 @@ public:
   static std::string log_level_str(log_level level);
 };
 
+#ifdef NDEBUG
 #define LOG_DEBUG(fmt, args...)                                                \
   y::lib::Log::write(y::lib::Log::log_level::DEBUG, __FILE__, __LINE__,        \
                      __FUNCTION__, STDOUT_FILENO, fmt, ##args)
+#else
+#define LOG_DEBUG(fmt, args...)                                                \
+  do {                                                                         \
+  } while (0)
+#endif
+
 #define LOG_INFO(fmt, args...)                                                 \
   y::lib::Log::write(y::lib::Log::log_level::INFO, __FILE__, __LINE__,         \
                      __FUNCTION__, STDOUT_FILENO, fmt, ##args)
