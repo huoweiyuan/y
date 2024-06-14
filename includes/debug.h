@@ -5,10 +5,9 @@
 
 #define COST_TIME(PROCESSOR, STR)                                              \
   do {                                                                         \
-  } while (0) #else
+  } while (0)
 
 #else
-
 #include <stdio.h>
 
 #define COST_TIME(PROCESSOR, STR)                                              \
