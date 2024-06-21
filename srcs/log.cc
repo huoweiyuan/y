@@ -1,5 +1,5 @@
 #include "log.h"
-#include <vector>
+#include <cstdarg>
 
 using namespace y::lib;
 using namespace std;
